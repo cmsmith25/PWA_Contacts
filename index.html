@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Contact Keeper</title>
+
+    <!--This code links to the Materialize, icons, css & js-->
+
+    <link rel="stylesheet" href="css/materialize.min.css" type="text/css">
+
+    <!--Import Google Icon fonts-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css" type="text/css">
+    
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body class="grey lighten-3">
+
+    <!--top navigation menu-->
+    <header>
+    <nav class="z-depth-0 orange lighten-2">
+        <div class="nav-wrapper container">
+            <a href="/" 
+            aria-label="Contact Keeper Home"
+            class="brand-logo" orange-text text-darken-2>
+            Contact<span> Keeper</span>
+        </a>
+        <!--Hamburger Menu for condensed screens-->
+        <a href="#"
+        data-target="mobile-menu"
+        class="sidenav-trigger right hide-on-med-and-up black-text"
+        aria-label="Open side menu">
+    
+        <i class="material-icons">menu</i>
+        </a>
+    
+
+    <!--Navbar links for bigger screen-->
+    <ul class="right hide-on-small-and-down">
+        
+        <li><a href="/" class="waves-effect grey-text text-darken-3">Home</a></li>
+        <li><a href="/pages/about.html" class="waves-effect grey-text text-darken-3">About</a></li>
+
+        <li>
+            <a href="/pages/contact.html"
+            class="waves-effect grey-text text-darken-3">Contact</a>
+        </li>
+    </ul>
+</div>
+</nav>
+</header>
+
+<aside>
+    <!--Sidenav for small and medium screens-->
+    <ul class="sidenav" id="mobile-menu">
+        <li><a class="subheader">CONTACT KEEPER</a></li>
+        <li>
+            <a href="/pages/about.html"
+            class="waves-effect grey-text text-darken-3"
+            >About</a>
+        </li>
+        <li><div class="divider"></div></li>
+
+        <li><a href="/pages/contact.html"
+        class="waves-effect grey-text text-darken-3"></a></li>
+    </ul>
+</aside>
+
+    <!--Contacts Info-->
+<main>
+    <div class="contacts container grey-text text-darken-2">
+        <div class="card-panel white row valign-wrapper">
+            <div class="col s2">
+            <img src="img/contacts.jpg" 
+            class="circle responsive-img"
+            alt="contact icon"
+            style="max-width: 100%; height: auto"
+            />
+            </div>
+            <div class="contact-info col s8">
+                <h5 class="contact-name black-text">Mom</h5>
+                <div class="contact-number">3161234567</div>
+            </div>
+
+            <div class="contact-icons">
+                <i class="material-icons call_out">call_outline</i>
+                
+            </div>
+
+            <div class="email-info">
+                <div class="email-address">Mom@gmail.com</div>
+                <i class="material-icons email">email</i>
+                
+            </div>
+            <div class="col s2 right-align">
+            <button class="contact-delete btn-flat" aria-label="Delete Contact">
+            <i class="material-icons black-text text-darken-1"
+            style="font-size: 30px"
+            >delete</i>
+        </button>
+        </div>
+        
+        </div>
+
+
+        <div class="card-panel white row valign-wrapper">
+            <div class="col s2">
+            <img src="img/contacts.jpg" 
+            class="circle responsive-img"
+            alt="contact icon"
+            style="max-width: 100%; height: auto"
+            />
+            </div>
+            <div class="contact-info col s8">
+                <h5 class="contact-name black-text">Dad</h5>
+                <div class="contact-number">3167654321</div>
+            </div>
+
+            <div class="contact-icons">
+                <i class="material-icons call_out">call_outline</i>
+                
+            </div>
+
+            <div class="email-info">
+                <div class="email-address">Dad@gmail.com</div>
+                <i class="material-icons email">email</i>
+                
+            </div>
+            <div class="col s2 right-align">
+            <button class="contact-delete btn-flat" aria-label="Delete Contact">
+            <i class="material-icons black-text text-darken-1"
+            style="font-size: 30px"
+            >delete</i>
+        </button>
+        </div>
+
+    </div>
+
+    <div class="center">
+        <button class="btn-floating btn-large orange darken-2 sidenav-trigger" 
+        data-target="side-form"
+        aria-label="Add new contact">
+
+            <i class="material-icons">add</i>
+        </button>
+    </div>
+
+    <!--Add Contact Navigation Menu-->
+
+    <div id="side-form" class="sidenav side-form">
+        <form class="add-contact container section">
+
+            <h5 >Add Contact</h5>
+
+            <div class="divider"></div>
+
+            <div class="input-field">
+                <input placeholder="Enter Name" id="name" type="text" class="validate">
+                <label for="title" class="black-text">Contact Name</label>
+            </div>
+            <div class="input-field">
+                <input placeholder="e.g. +123456789" id="numbers" type="text" class="validate">
+                <label for="numbers" class="black-text">Phone Number</label>
+            </div>
+            <div class="input-field center">
+                <button type="button" class="btn-small blue darken-2">Add Contact</button>
+            </div>
+        </form>
+    </div>
+
+</main>
+
+    <script src="/js/materialize.min.js"></script>
+    <script src="/js/ui.js"></script>
+</body>
+</html>
