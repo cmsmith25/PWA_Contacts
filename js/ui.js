@@ -26,7 +26,7 @@ if ("serviceWorker" in navigator) {
 
 
 //create indexDB database
-async function createDB(params) {
+async function createDB() {
     const db = await openDB("contactKeeper", 1, {
         upgrade(db) {
             const store = db.createObjectStore("contacts", {
@@ -82,7 +82,7 @@ async function deleteContact(id) {
 
 //Load Contacts with transaction
 async function loadContacts() {
-    const db = await createDB()
+    const db = await createDB();
 
 //start transaction
 const tx = db.transaction("contacts", "readonly");
@@ -103,7 +103,7 @@ contacts.forEach((contact) => {
 
 //Display contact using existing HTML structure
 function displayContact(contact) {
-    const contactContainer = document.querySelector("contacts");
+    const contactContainer = document.querySelector(".contacts");
     const html = `
         <div class="card-panel white row valign-wrapper" data-id=${contact.id}>
             <div class="col s2">
@@ -136,7 +136,8 @@ function displayContact(contact) {
         </button>
         </div>
         
-        </div>`;
+        </div>
+        `;
 
         contactContainer.insertAdjacentHTML("beforeend", html);
 
@@ -162,24 +163,30 @@ function displayContact(contact) {
             status: "pending",
         };
 
-        await addContact(contact);
+        await addContact(contact); //Add Contact to IndexedDB
         
-        displayContact(contact);
+        displayContact(contact);  //Add Contact to UI
 
+
+        //Clears input fields after adding
         nameInput.value = "";
         numberInput.value = "";
 
+
+        //Closes the side form after adding
         const forms = document.querySelector(".side-form");
         const instance = M.Sidenav.getInstance(forms);
         instance.close();
     });
 
+
+    //Function to check storage usage
     async function checkStorageUsage() {
         if (navigator.storage && navigator.storage.estimate){
-            const {usage,quota} = await navigator.storage.estimate();
+            const { usage,quota } = await navigator.storage.estimate();
 
-            const usageInMB = (usage / (1024 * 1024)).toFixed(2);
-            const quotaInMB = (quota / (1024 * 1024)).toFixed(2);
+            const usageInMB = (usage / (1024 * 1024)).toFixed(2); //convert to MB
+            const quotaInMB = (quota / (1024 * 1024)).toFixed(2); //convert to MB
 
             console.log(`Storage used: ${usageInMB} MB of ${quotaInMB} MB`);
 
