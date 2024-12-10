@@ -7,7 +7,7 @@ import {
     getDocs,
     deleteDoc,
     updateDoc,
- } from "https://www.gtatic.com/firebasejk/11.0.2/firebase-firestore.js";
+ } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
   // TODO: Add SDKs for Firebase products that you want to use
   // https://firebase.google.com/docs/web/setup#available-libraries
 

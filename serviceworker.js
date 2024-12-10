@@ -46,18 +46,27 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
     console.log("Service Worker: Fetching...", event.request.url);
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            if (cachedResponse) {
-                return cachedResponse;
-        }
-    
+        (async function () {
+            if(event.request.method !== "GET") {
+                return fetch(event.request);
+            }
+        
+            const cachedResponse = await caches.match(event.request);
 
-        return fetch(event.request).then((networkResponse) => {
-            return caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse.clone()); //Update the cache with new resonse
+            if(cachedResponse) {
+                return cachedResponse;
+            }
+    
+            try {
+                const networkResponse = await fetch(event.request);
+                const cache = await caches.open(CACHE_NAME);
+                cache.put(event.request, networkResponse.clone());
                 return networkResponse;
-            });
-        });
-    })
-);
+            }   catch (error) {
+                console.error("Fetch failed, returning offline page:", error);
+            }
+        })()
+    );
 });
+
+  

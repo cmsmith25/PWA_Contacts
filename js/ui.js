@@ -1,7 +1,7 @@
-import { openDB } from "http:unpkg.com/idb?module";
+import { openDB } from "http://unpkg.com/idb?module";
 
 
-
+//Initialize Sidenav and Forms
 document.addEventListener("DOMContentLoaded", function() {
      //Side navigation menu
     const menus = document.querySelector(".sidenav");
@@ -11,8 +11,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const forms = document.querySelector(".side-form");
     M.Sidenav.init(forms, { edge: "left" });
 
+    //Load contacts from IndexedDB
     loadContacts();
 
+    //Check my storage usage
     checkStorageUsage();
 
     requestPersistentStorage();
@@ -28,7 +30,7 @@ if ("serviceWorker" in navigator) {
 
 
 
-//create indexDB database
+//create indexedDB database
 async function createDB() {
     const db = await openDB("contactKeeper", 1, {
         upgrade(db) {
@@ -87,7 +89,7 @@ async function deleteContact(id) {
 async function loadContacts() {
     const db = await createDB();
 
-//start transaction
+//start transaction(read-only)
 const tx = db.transaction("contacts", "readonly");
 const store = tx.objectStore("contacts");
 
@@ -110,7 +112,7 @@ contacts.forEach((contact) => {
 function displayContact(contact) {
     const contactContainer = document.querySelector(".contacts");
     const html = `
-        <div class="card-panel white row valign-wrapper" data-id=${contact.id}>
+        <div class="card-panel white row valign-wrapper" data-id="${contact.id}">
             <div class="col s2">
             <img src="img/icons/contacts.png" 
             class="circle responsive-img"
@@ -206,6 +208,7 @@ function displayContact(contact) {
                 if(storageWarning){
                     storageWarning.textContent = "Warning: You are running low on data";
                     storageWarning.style.display = "block";
+                }
                 } else {
                     const storageWarning = document.querySelector("#storage-warning");
                     if(storageWarning){
@@ -216,4 +219,28 @@ function displayContact(contact) {
 
             }
         }
-    }
+
+        //Function to request persistent storage
+        async function requestPersistentStorage() {
+            if(navigator.storage && navigator.storage.persist) {
+                const isPersistent = await navigator.storage.persist();
+                console.log(`Persistent storage granted: ${isPersistent}`);
+
+                //Update the UI with message
+                const storageMessage = document.querySelector("#persistent-storage-info");
+                if(storageMessage) {
+                    if(isPersistent) {
+                        storageMessage.textContent = 
+                        "Persistent storage granted. Your data is safe!";
+                        storageMessage.classList.remove("red-text");
+                        storageMessage.classList.add("green-text");
+                    } else {
+                        storageMessage.textContent = 
+                        "Persistent storage not granted. Data might be cleared under storage pressure.";
+                        storageMessage.classList.remove("green-text");
+                        storageMessage.classList.add("red-text");
+                    }
+                }
+            }
+        }
+    
