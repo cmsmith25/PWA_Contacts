@@ -1,4 +1,10 @@
-import { openDB } from "http://unpkg.com/idb?module";
+import { openDB } from "https://unpkg.com/idb?module";
+
+import {
+    addContactToFirebase,
+    getContactsFromFirebase,
+    deleteContactFromFirebase,
+} from ".//firebaseDB.js";
 
 
 //Initialize Sidenav and Forms

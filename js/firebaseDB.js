@@ -25,40 +25,37 @@ import {
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getFireStore(app);
+  const db = getFirestore(app);
 
   //Add a Contact
   export async function addContactToFirebase(contact) {
     try{
     const docRef = await addDoc(collection(db, "contacts"), contact);
-    return {id: docRef.id, ...contact}
-    } catch(error) {
-        console.error("error adding contact: ", error)
+    return { id: docRef.id, ...contact }
+    } catch(e) {
+        console.error("error adding contact: ", e)
     }
   }
 
-  const contact = {
-    name: "example name",
-    number: "test",
-    status: "true",
-  };
 
   //Get Contacts
-  export async function getContacts(params) {
-    const tasks = [];
+  export async function getContactsFromFirebase() {
+    const contacts = [];
     try{
 const querySnapshot = await getDocs(collection(db, "contacts"));
 querySnapshot.forEach((doc) =>{
-    tasks.push({id: doc.id, ...doc.data()})
-})
-    }catch(error){
-        console.error("error retrieving taks: ", error);
+    tasks.push({ id: doc.id, ...doc.data() });
+});
+    }catch (e) {
+        console.error("error retrieving contacts: ", e);
     }
-    return getContacts;
+    return contacts;
   }
+  w;
+
   //Delete Contacts
-  export async function deleteContact(id) {
-    try{
+  export async function deleteContactFromFirebase(id) {
+    try {
      await deleteDoc(doc(db, "contacts", id));   
     }catch (error) {
         console.error("error deleting contacts: ", error);
@@ -69,8 +66,8 @@ querySnapshot.forEach((doc) =>{
     try{
     const contactRef = doc(db, "contacts", id);
     await updateDoc(contactRef, updatedData);
-    }catch (error) {
-        console.error("error updating contact: ", error);
+    } catch (e) {
+        console.error("error updating contact: ", e);
     }
   }
   
