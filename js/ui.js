@@ -2,10 +2,11 @@ import { openDB } from "http:unpkg.com/idb?module";
 
 
 
-document.addEventListener( "DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function() {
      //Side navigation menu
     const menus = document.querySelector(".sidenav");
     M.Sidenav.init(menus , { edge: "right" });
+
     //Form to add a contact
     const forms = document.querySelector(".side-form");
     M.Sidenav.init(forms, { edge: "left" });
@@ -13,6 +14,8 @@ document.addEventListener( "DOMContentLoaded", function() {
     loadContacts();
 
     checkStorageUsage();
+
+    requestPersistentStorage();
 });
 
 
@@ -91,10 +94,12 @@ const store = tx.objectStore("contacts");
 //Get all contacts
 const contacts = await store.getAll();
 
+//Complete transaction
 await tx.done;
 
 const contactContainer = document.querySelector(".contacts");
 contactContainer.innerHTML = "";
+
 contacts.forEach((contact) => {
     displayContact(contact);
 
