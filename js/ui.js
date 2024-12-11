@@ -259,14 +259,18 @@ function displayContact(contact) {
 
 
         //Clears input fields after adding
-        nameInput.value = "";
-        numberInput.value = "";
-
-
-        //Closes the side form after adding
-        const forms = document.querySelector(".side-form");
-        const instance = M.Sidenav.getInstance(forms);
-        instance.close();
+        function closeForm() {
+            const contactInput = document.querySelector("#name");
+            const numberInput = document.querySelector("#number");
+            const contactIdInput = document.querySelector("#contact-id");
+            const formActionButton = document.querySelector("#form-action-btn");
+            nameInput.value = "";
+            numberInput.value = "";
+            contactIdInput.value = "";
+            formActionButton.textContent = "Add";
+            const forms = document.querySelector(".side-form");
+            const instance = M.Sidenav.getInstance(forms);
+            instance.close();
     });
 
 
