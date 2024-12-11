@@ -45,9 +45,8 @@ async function createDB() {
         upgrade(db) {
             const store = db.createObjectStore("contacts", {
                 keyPath: "id",
-                autoIncrement: true,
+                autoIncrement: false,
             });
-            store.createIndex("status", "status");
             store.createIndex("synced", "synced");
         },
     });
@@ -70,17 +69,10 @@ if(navigator.onLine) {
 }   else {
     contactId = `temp-${Date.now()}`;
 
-
-    const contactToStore = { ...contact, contactId, synced: false};
-    if(!contactToStore.id) {
-        console.error("Failed to generate a valid ID for the contact")
-        return; //Exit if ID is invalid
-    }
-
     //Start a transaction
     const tx = db.transaction("contacts", "readwrite");
     const store = tx.objectStore("contacts");
-    await store.put(contactToStore);
+    await store.put({ ...contact, id: contactId, synced: false});
     await tx.done;
 }
 
@@ -94,42 +86,27 @@ if(navigator.onLine) {
 
 //Sync unsynced contacts from IndexedDB to Firebase
 async function syncContacts() {
+    if (!navigator.onLine) return;
     const db = await createDB();
-    const tx = db.transaction("contacts", "readonly");
+    const tx = db.transaction("contacts");
     const store = tx.objectStore("contacts");
-
-    //Fetch any unsynced contacts
-    const contacts = await store.getAll();
-    await tx.done;
-
-    for(const contact of contacts) {
-        if(!contact.synced && navigator.online) {
-            try {
-                const contactToSync = {
-                    name: contact.name,
-                    number: contact.number,
-                    status: contact.status,
-                };
-
-                const savedContact = await addContactToFirebase(contactToSync);
-
-                const txUpdate = db.transaction("contacts", "readwrite");
-                const storeUpdate = txUpdate.objectStore("contacts");
-
-
-                await storeUpdate.delete(contact.id);
-                await storeUpdate.put({ ...contact, id: savedContact.id, synced: true});
-                await txUpdate.done;
-            } catch (error) {
-                console.error("Error syncing task:", error);
+    try{ 
+        const unsyncedContacts = await store.getAll();
+        for (const contact of unsyncedContacts) {
+            if(!contact.synced) {
+                const syncedContact = await addContactToFirebase(contact);
+                await store.put({ ...contact, id: syncedContact.id, synced: true});
             }
         }
-    }
-}
+        } catch (error) {
+            console.error("Error syncing contacts:", error);
+        } finally {
+            await tx.done;
+        }
+    }   
 
 //Delete Contact
 async function deleteContact(id) {
-    console.log(id);
     if(!id) {
         console.error("Invalid ID passed to deleteContact.");
         return;
@@ -162,10 +139,12 @@ async function deleteContact(id) {
 }
 
 //Load Contacts with transaction
-export async function loadContacts() {
+async function loadContacts() {
     const db = await createDB();
     const contactContainer = document.querySelector(".contacts");
     contactContainer.innerHTML = "";
+
+    try{
 
     if(navigator.onLine) {
         const firebaseContacts = await getContactsFromFirebase();
@@ -184,21 +163,28 @@ export async function loadContacts() {
         const contacts = await store.getAll();
 
 
-        contacts.forEach((contact) => {
-            displayContact(contact);
-        });
+        contacts.forEach((contact) => 
+            displayContact(contact));
+        }
         await tx.done;
     }
+    catch (error) {
+    console.error("Error loading contacts");
 }
+
 
 
 //Display contact using existing HTML structure
 function displayContact(contact) {
     const contactContainer = document.querySelector(".contacts");
-    const html = `
-        <div class="card-panel white row valign-wrapper" data-id="${contact.id}">
+    const contactElement = document.createElement("div");
+    contactElement.className = "card-panel white row valign-wrapper";
+    contactElement.dataset.id = contact.id;
+
+    contactElement.innerHTML = `
+    
             <div class="col s2">
-            <img src="img/icons/contacts.png" 
+            <img src="/img/icons/contacts.png" 
             class="circle responsive-img"
             alt="contact icon"
             style="max-width: 100%; height: auto"
@@ -209,14 +195,6 @@ function displayContact(contact) {
                 <div class="contact-number">${contact.number}</div>
             </div>
 
-            <div class="contact-icons">
-                <i class="material-icons call_out">call_outline</i>
-                
-            </div>
-
-            <div class="email-info">
-                <div class="email-address">Mom@gmail.com</div>
-                <i class="material-icons email">email</i>
                 
             </div>
             <div class="col s2 right-align">
@@ -227,51 +205,12 @@ function displayContact(contact) {
         </button>
         </div>
         
-        </div>
         `;
 
-        contactContainer.insertAdjacentHTML("beforeend", html);
-
-        //Attach delete event listener
-        const deleteButton = contactContainer.querySelector(
-            ` [data-id="${contact.id}"] .contact-delete`
-        );
-
-        deleteButton.addEventListener("click", () => deleteContact(contact.id));
-
-    }
-
-    //Add Contact Button listener
-
-    const addContactButton = document.querySelector(".btn-small");
-    addContactButton.addEventListener("click", async () => {
-        const nameInput = document.querySelector("#name");
-        const numberInput = document.querySelector("#number");
-
-        const contact = {
-            name: nameInput.value,
-            number: numberInput.value,
-            status: "pending",
-        };
-
-        const savedContact = await addContact(contact);
-        displayContact(savedContact);
+        contactContainer.appendChild(contactElement);
+}
 
 
-        //Clears input fields after adding
-        function closeForm() {
-            const contactInput = document.querySelector("#name");
-            const numberInput = document.querySelector("#number");
-            const contactIdInput = document.querySelector("#contact-id");
-            const formActionButton = document.querySelector("#form-action-btn");
-            nameInput.value = "";
-            numberInput.value = "";
-            contactIdInput.value = "";
-            formActionButton.textContent = "Add";
-            const forms = document.querySelector(".side-form");
-            const instance = M.Sidenav.getInstance(forms);
-            instance.close();
-    });
 
 
     //Function to check storage usage
@@ -289,6 +228,8 @@ function displayContact(contact) {
             if(storageInfo){
                 storageInfo.textContent = `Storage used: ${usageInMB} MB of ${quotaInMB} MB`;
             }
+            
+            const storageWarning = document.querySelector("#storage-warning");
 
             if (usage/quota > 0.8){
                 const storageWarning = document.querySelector("#storage-warning");
@@ -305,32 +246,19 @@ function displayContact(contact) {
                 }
 
             }
-        }
+    }
 
         //Function to request persistent storage
         async function requestPersistentStorage() {
             if(navigator.storage && navigator.storage.persist) {
                 const isPersistent = await navigator.storage.persist();
                 console.log(`Persistent storage granted: ${isPersistent}`);
-
-                //Update the UI with message
-                const storageMessage = document.querySelector("#persistent-storage-info");
-                if(storageMessage) {
-                    if(isPersistent) {
-                        storageMessage.textContent = 
-                        "Persistent storage granted. Your data is safe!";
-                        storageMessage.classList.remove("red-text");
-                        storageMessage.classList.add("green-text");
-                    } else {
-                        storageMessage.textContent = 
-                        "Persistent storage not granted. Data might be cleared under storage pressure.";
-                        storageMessage.classList.remove("green-text");
-                        storageMessage.classList.add("red-text");
-                    }
-                }
             }
         }
+
+           
 
         window.addEventListener("online", syncContacts);
         window.addEventListener("online", loadContacts);
     
+    }
