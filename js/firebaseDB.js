@@ -2,17 +2,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebas
 import { 
     getFirestore,
     collection,
-    doc,
     addDoc,
     getDocs,
     deleteDoc,
     updateDoc,
+    doc,
  } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
+  
   const firebaseConfig = {
     apiKey: "AIzaSyAZpd3XKCYnJHkNLLAIoUv7YRO5z3rfj64",
     authDomain: "contactkeeper-e0d3e.firebaseapp.com",
@@ -51,10 +49,14 @@ querySnapshot.forEach((doc) =>{
     }
     return contacts;
   }
-  w;
+  
 
   //Delete Contacts
   export async function deleteContactFromFirebase(id) {
+    if(!id) {
+      console.error("Invalid ID passed to deleteContactFromFirebase.");
+      return;
+    }
     try {
      await deleteDoc(doc(db, "contacts", id));   
     }catch (error) {

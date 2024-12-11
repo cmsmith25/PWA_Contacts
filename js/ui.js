@@ -4,7 +4,7 @@ import {
     addContactToFirebase,
     getContactsFromFirebase,
     deleteContactFromFirebase,
-} from ".//firebaseDB.js";
+} from "./firebaseDB.js";
 
 
 //Initialize Sidenav and Forms
@@ -19,6 +19,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     //Load contacts from IndexedDB
     loadContacts();
+    syncContacts();
+
 
     //Check my storage usage
     checkStorageUsage();
@@ -27,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+//Register service worker
 if ("serviceWorker" in navigator) {
     navigator.serviceWorker
     .register("/serviceworker.js")
@@ -45,6 +48,7 @@ async function createDB() {
                 autoIncrement: true,
             });
             store.createIndex("status", "status");
+            store.createIndex("synced", "synced");
         },
     });
     return db;
@@ -53,31 +57,97 @@ async function createDB() {
 //Add Contact
 async function addContact(contact) {
     const db = await createDB();
+    let contactId;
+
+if(navigator.onLine) {
+    const savedContact = await addContactToFirebase(contact);
+    contactId = savedContact.id;
+
+    const tx = db.transaction("contacts", "readwrite");
+    const store = tx.objectStore("contacts");
+    await store.put({ ...contact, id: contactId, synced: true });
+    await tx.done;
+}   else {
+    contactId = `temp-${Date.now()}`;
+
+
+    const contactToStore = { ...contact, contactId, synced: false};
+    if(!contactToStore.id) {
+        console.error("Failed to generate a valid ID for the contact")
+        return; //Exit if ID is invalid
+    }
 
     //Start a transaction
     const tx = db.transaction("contacts", "readwrite");
     const store = tx.objectStore("contacts");
+    await store.put(contactToStore);
+    await tx.done;
+}
 
-    //Add contact to store
-    await store.add(contact);
 
-    //Complete transaction
+//Update storage usage
+    checkStorageUsage();
+
+    //Return contact with id
+    return { ...contact, id: contactId };
+}
+
+//Sync unsynced contacts from IndexedDB to Firebase
+async function syncContacts() {
+    const db = await createDB();
+    const tx = db.transaction("contacts", "readonly");
+    const store = tx.objectStore("contacts");
+
+    //Fetch any unsynced contacts
+    const contacts = await store.getAll();
     await tx.done;
 
-    //Update storage usage
-    checkStorageUsage();
+    for(const contact of contacts) {
+        if(!contact.synced && navigator.online) {
+            try {
+                const contactToSync = {
+                    name: contact.name,
+                    number: contact.number,
+                    status: contact.status,
+                };
+
+                const savedContact = await addContactToFirebase(contactToSync);
+
+                const txUpdate = db.transaction("contacts", "readwrite");
+                const storeUpdate = txUpdate.objectStore("contacts");
+
+
+                await storeUpdate.delete(contact.id);
+                await storeUpdate.put({ ...contact, id: savedContact.id, synced: true});
+                await txUpdate.done;
+            } catch (error) {
+                console.error("Error syncing task:", error);
+            }
+        }
+    }
 }
 
 //Delete Contact
 async function deleteContact(id) {
+    console.log(id);
+    if(!id) {
+        console.error("Invalid ID passed to deleteContact.");
+        return;
+    }
     const db = await createDB();
+    if(navigator.onLine) {
+        await deleteContactFromFirebase(id);
+    }
 
-    //start transaction
+    //Delete from IndexedDB
     const tx = db.transaction("contacts", "readwrite");
     const store = tx.objectStore("contacts");
 
-    //Delete Contact by id
+    try{
     await store.delete(id);
+    } catch (e) {
+        console.error("Error deleting contact from IndexedDB:", e);
+    }
 
     await tx.done;
 
@@ -92,27 +162,35 @@ async function deleteContact(id) {
 }
 
 //Load Contacts with transaction
-async function loadContacts() {
+export async function loadContacts() {
     const db = await createDB();
+    const contactContainer = document.querySelector(".contacts");
+    contactContainer.innerHTML = "";
 
-//start transaction(read-only)
-const tx = db.transaction("contacts", "readonly");
-const store = tx.objectStore("contacts");
+    if(navigator.onLine) {
+        const firebaseContacts = await getContactsFromFirebase();
+        const tx = db.transaction("contacts", "readwrite");
+        const store = tx.objectStore("contacts");
 
-//Get all contacts
-const contacts = await store.getAll();
+        for (const contact of firebaseContacts) {
+            // Save contacts to IndexedDB with 'synced' flag
+            await store.put({ ...contact, synced: true });
+            displayContact(contact); // Display each task in the UI
+          }
+          await tx.done;
+    }   else {
+        const tx = db.transaction("contacts", "readonly");
+        const store = tx.objectStore("contacts");
+        const contacts = await store.getAll();
 
-//Complete transaction
-await tx.done;
 
-const contactContainer = document.querySelector(".contacts");
-contactContainer.innerHTML = "";
-
-contacts.forEach((contact) => {
-    displayContact(contact);
-
-});
+        contacts.forEach((contact) => {
+            displayContact(contact);
+        });
+        await tx.done;
+    }
 }
+
 
 //Display contact using existing HTML structure
 function displayContact(contact) {
@@ -176,9 +254,8 @@ function displayContact(contact) {
             status: "pending",
         };
 
-        await addContact(contact); //Add Contact to IndexedDB
-        
-        displayContact(contact);  //Add Contact to UI
+        const savedContact = await addContact(contact);
+        displayContact(savedContact);
 
 
         //Clears input fields after adding
@@ -249,4 +326,7 @@ function displayContact(contact) {
                 }
             }
         }
+
+        window.addEventListener("online", syncContacts);
+        window.addEventListener("online", loadContacts);
     
